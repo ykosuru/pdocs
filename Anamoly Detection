@@ -1,4 +1,4 @@
-# Anomaly Detection in Wire Payments Processing - Business Requirements
+# Anomaly Detection in Wire Payments Processing - Business Requirements (Updated)
 
 ## 1. Executive Summary
 
@@ -19,7 +19,6 @@ This document outlines business requirements for anomaly detection in wire payme
 - International wire transfers routed via SWIFT network
 - CHIPS high-value clearing system transactions
 - Cross-border payments involving multiple correspondent banking relationships
-- Same-day ACH transactions with wire transfer characteristics
 - Bulk payment processing and batch transaction analysis
 
 ## 3. Functional Business Requirements
@@ -95,7 +94,6 @@ This document outlines business requirements for anomaly detection in wire payme
 - Resolution workflows must enable quick clearance of legitimate transactions
 - Status updates must keep customers informed throughout the investigation process
 - Appeal processes must handle disputes over blocked or delayed transactions
-- Customer education must help prevent future false positive situations
 
 ### 3.10 Audit Trail and Documentation
 - Complete transaction history must be maintained for all processed payments
@@ -153,62 +151,180 @@ This document outlines business requirements for anomaly detection in wire payme
 
 ### 5.3 Data Retention and Audit
 - Seven-year retention period for transaction records and investigation documentation
-- Two-year retention for ACH authorization records per NACHA requirements
 - Audit trail preservation for regulatory examinations and investigations
 - Data quality standards for accuracy and completeness of records
 - Export capabilities for regulatory requests and legal proceedings
 
-## 6. Integration Requirements
+## 6. ISO 20022 Message Types for Anomaly Detection (UPDATED)
 
-### 6.1 Payment Network Integration
+### 6.1 Core Payment Messages for Analysis
+
+#### Primary Transaction Messages:
+- **pacs.008** - Financial Institution to Financial Institution Customer Credit Transfer
+  - Primary message for wire transfers requiring full anomaly analysis
+  - Contains complete debtor/creditor information and transaction details
+  - Requires real-time fraud screening before settlement
+  - Enhanced data fields for behavioral pattern analysis
+
+- **pacs.009** - Financial Institution Credit Transfer
+  - Bank-to-bank transfers requiring institution-level anomaly detection
+  - Monitor for unusual inter-bank transfer patterns
+  - Analyze for correspondent banking relationship anomalies
+
+- **pacs.004** - Payment Return
+  - Critical for detecting return patterns and failed payment trends
+  - Monitor return reasons for fraud indicators
+  - Track return velocity and suspicious return patterns
+
+#### Transaction Status and Monitoring Messages:
+- **pacs.002** - Financial Institution to Financial Institution Payment Status Report
+  - Monitor for unusual status patterns (PDNG, RJCT, ACCP)
+  - Track rejection reasons for fraud pattern analysis
+  - Detect suspicious status change patterns
+
+### 6.2 Investigation and Exception Messages (UPDATED)
+
+#### Modern Investigation Framework:
+- **camt.110** - Investigation Request (NEW - Available November 2024)
+  - Structured investigation requests for exceptions and payment inquiries
+  - Replaces unstructured MT199/299 investigation messages
+  - Enhanced routing through SWIFT's Case Management service
+
+- **camt.111** - Investigation Response (NEW - Available November 2024)
+  - Structured responses to investigation requests
+  - Provides standardized investigation resolution reporting
+  - Enables automated processing of investigation outcomes
+
+#### Payment Cancellation and Recall Messages:
+- **camt.056** - FI to FI Payment Cancellation Request
+  - Monitor for suspicious payment recall patterns
+  - Detect fraudulent attempt to reverse legitimate payments
+  - Track recall velocity and frequency anomalies
+
+- **camt.029** - Resolution of Investigation
+  - Responses to cancellation requests and investigation inquiries
+  - Monitor positive vs. negative resolution patterns
+  - Analyze rejection reasons for fraud indicators
+
+#### Legacy Investigation Support (During Transition):
+- **camt.027** - Claim Non-Receipt
+  - Track claims for potential fraud schemes
+  - Monitor for false claim patterns
+
+- **pacs.028** - FI to FI Payment Status Request
+  - Status inquiries for missing or delayed payments
+  - Monitor for suspicious status inquiry patterns
+
+### 6.3 Account and Cash Management Messages
+
+#### Real-time Account Monitoring:
+- **camt.052** - Bank to Customer Account Report (Intraday)
+  - Real-time account activity monitoring for fraud detection
+  - Enhanced transaction detail analysis for anomaly patterns
+  - Velocity tracking for rapid transaction sequences
+
+- **camt.053** - Bank to Customer Statement (End-of-Day)
+  - Daily pattern analysis and reconciliation validation
+  - Enhanced remittance information for fraud detection
+  - Historical pattern baseline establishment
+
+- **camt.054** - Bank to Customer Debit Credit Notification
+  - Individual transaction notifications for immediate fraud alerts
+  - Real-time notification analysis for suspicious patterns
+
+### 6.4 Enhanced Data Fields for Fraud Detection (ISO 20022)
+
+#### Enriched Transaction Data:
+- **Ultimate Debtor/Creditor Information**: Enhanced party details with structured addressing for improved sanctions screening
+- **Purpose Codes**: Standardized transaction purpose identification
+- **End-to-End ID (UETR)**: Unique transaction tracking for duplicate detection
+- **Structured Remittance Information**: Rich invoice and reference data for business validation
+
+#### Fraud-Specific Analysis Fields:
+- **Agent Information**: Complete correspondent banking chain analysis
+- **Charges Information**: Unusual charge patterns and bearer analysis
+- **Exchange Rate Information**: Currency conversion anomaly detection
+- **Regulatory Reporting**: Enhanced compliance and threshold monitoring
+
+### 6.5 Administrative and Error Messages
+
+#### System Error and Rejection Analysis:
+- **admi.002** - Message Reject
+  - Monitor message format errors for potential manipulation attempts
+  - Track rejection patterns for system abuse detection
+  - Analyze error codes for fraud indicators
+
+- **head.001** - Business Application Header
+  - Monitor routing and delivery patterns
+  - Detect message manipulation attempts
+  - Track sender/receiver relationship anomalies
+
+## 7. Enhanced Fraud Detection Capabilities (ISO 20022)
+
+### 7.1 Structured Data Analysis
+- **Increased Data Volume**: ISO 20022 provides approximately 9,000 characters vs. 100 in legacy formats
+- **Machine-Readable XML**: Enables advanced AI/ML fraud detection algorithms
+- **Standardized Fields**: Reduces false positives through structured data analysis
+
+### 7.2 Advanced Pattern Recognition
+- **Behavioral Analytics**: Enhanced customer transaction pattern analysis
+- **Network Analysis**: Complete end-to-end payment flow visibility
+- **Risk Score Sharing**: Inter-bank risk score exchange capabilities
+
+### 7.3 Real-time Processing Benefits
+- **Straight-Through Processing**: Faster automated decision making
+- **Reduced Manual Review**: Improved automation reduces operational costs
+- **Enhanced Customer Experience**: Faster legitimate transaction processing
+
+## 8. Integration Requirements
+
+### 8.1 Payment Network Integration
 - Real-time connectivity with Fedwire Funds Service for domestic transactions
 - CHIPS network integration for high-value clearing and settlement
 - SWIFT network connectivity for international wire transfer processing
 - FedNow Service integration for instant payment monitoring capabilities
-- ACH network integration for related transaction monitoring
 
-### 6.2 Data Source Integration
+### 8.2 Data Source Integration
 - Customer databases for account holder information and transaction history
 - Sanctions screening services for real-time watch list checking
 - Fraud intelligence networks for emerging threat pattern sharing
 - Regulatory databases for compliance requirement validation
 - Reference data services for business and entity verification
 
-### 6.3 Communication Integration
+### 8.3 Communication Integration
 - Email systems for automated notifications and alerts
 - SMS services for urgent fraud alerts and notifications
 - Customer portals for self-service investigation and resolution
 - Case management systems for investigation workflow coordination
 - Regulatory reporting systems for automated compliance submissions
 
-## 7. Success Criteria
+### 8.4 Investigation Workflow Integration (UPDATED)
+- **SWIFT Case Management**: Integration with enhanced Case Management service for camt.110/111 processing
+- **Structured Investigation Processing**: Automated routing and resolution of investigation requests
+- **Cross-Platform Investigation**: Support for both MT and MX message formats during transition period
 
-### 7.1 Detection Effectiveness
+## 9. Success Criteria
+
+### 9.1 Detection Effectiveness
 - False positive rate below 1% to minimize legitimate transaction delays
 - Fraud detection rate above 95% for known fraudulent transaction patterns
 - Detection accuracy improvement over time through adaptive learning capabilities
 - Zero tolerance for regulatory compliance violations related to transaction monitoring
 - Customer satisfaction maintenance despite enhanced security measures
 
-### 7.2 Operational Efficiency
+### 9.2 Operational Efficiency
 - Investigation resolution within 5 minutes for standard anomaly cases
 - Automated decision capability for 90% of routine transaction processing
 - Escalation rate below 5% for transactions requiring manual review
 - System availability meeting 99.99% uptime targets during business hours
 - Processing capacity meeting current and projected transaction volumes
 
-### 7.3 Business Impact
-- Measurable reduction in fraud losses compared to baseline periods
-- Regulatory compliance maintenance with zero violations or penalties
-- Customer retention despite enhanced security and monitoring measures
-- Operational cost reduction through automated detection and processing
-- Brand reputation protection through proactive fraud prevention
-
-### 7.4 Regulatory and Compliance
+### 9.3 Regulatory and Compliance
 - Successful passage of all regulatory audits and examinations
 - Timely and accurate submission of all required regulatory reports
 - Zero sanctions violations or compliance failures
 - Complete audit trail availability for all regulatory requests
 - Effective suspicious activity identification and reporting
 
-This anomaly detection system must provide comprehensive fraud prevention while maintaining efficient payment processing and full regulatory compliance across all wire payment networks and standards.
+
+This anomaly detection system must provide comprehensive fraud prevention while maintaining efficient payment processing and full regulatory compliance across all wire payment networks and standards, leveraging the enhanced capabilities of ISO 20022 messaging.
