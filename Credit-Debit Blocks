@@ -1,4 +1,4 @@
-# Debit/Credit Blocks in Wire Payments Processing - Business Requirements
+# Debit/Credit Blocks in Wire Payments Processing - Business Requirements (Updated)
 
 ## 1. Executive Summary
 
@@ -21,14 +21,6 @@ This document outlines comprehensive business requirements for debit and credit 
 - Regulatory compliance blocking for AML, BSA, and other financial crime prevention
 - Operational risk blocking for insufficient funds, account status issues, and system errors
 - Reputational risk blocking for transactions involving high-risk entities or jurisdictions
-
-### 2.3 Business Impact Areas
-- Customer account protection from unauthorized access and fraudulent transactions
-- Institutional protection from regulatory fines and enforcement actions
-- Operational efficiency through automated blocking and exception management
-- Customer service enhancement through clear communication and rapid resolution
-- Risk management improvement through proactive transaction monitoring
-- Competitive advantage through superior security and compliance capabilities
 
 ## 3. Functional Business Requirements
 
@@ -108,17 +100,11 @@ This document outlines comprehensive business requirements for debit and credit 
 - Notify customers immediately when transactions are blocked with clear explanations
 - Provide self-service capabilities for customers to understand and resolve blocks
 - Enable customers to provide additional information to support block resolution
-- Implement proactive communication for anticipated blocks or restrictions
-- Support multiple communication channels including email, SMS, and mobile applications
-- Provide educational resources to help customers avoid future blocks
 
 ### 3.11 Monitoring and Analytics Dashboard
 - Real-time monitoring of all blocking activities and performance metrics
 - Executive dashboards showing blocking effectiveness and business impact
 - Trend analysis for identifying emerging threats and adjusting blocking rules
-- Performance analytics for optimizing blocking accuracy and reducing false positives
-- Compliance reporting for regulatory examination and audit purposes
-- Customer impact analysis for measuring service levels and satisfaction
 
 ### 3.12 Integration with Compliance Systems
 - Seamless integration with AML monitoring and case management systems
@@ -148,7 +134,7 @@ This document outlines comprehensive business requirements for debit and credit 
 
 ### 4.1 Processing Performance
 - Block evaluation must complete within 200 milliseconds for standard transactions
-- System must process 10,000 or more blocking evaluations per hour
+- System must process 100,000 or more blocking evaluations per hour
 - Real-time blocking must maintain accuracy during peak transaction periods
 - Response times must remain consistent regardless of blocking rule complexity
 - Concurrent processing must support multiple simultaneous blocking evaluations
@@ -170,23 +156,160 @@ This document outlines comprehensive business requirements for debit and credit 
 - Data integrity must be maintained during all system operations and recovery scenarios
 - Business continuity must be ensured through redundant blocking capabilities
 
-### 4.4 Scalability and Capacity Management
-- Blocking capabilities must scale to accommodate business growth and transaction volume increases
-- Rule processing must handle complex blocking logic without performance degradation
-- Historical data management must support growing databases without impacting performance
-- Geographic expansion must be supported for new markets and regulatory requirements
-- Integration capacity must accommodate additional systems and data sources
-
-### 4.5 Customer Impact Management
+### 4.4 Customer Impact Management
 - Blocking notifications must be delivered within 30 seconds of block implementation
 - Customer service tools must provide immediate access to blocking information
 - Resolution processes must be streamlined to minimize customer disruption
 - Self-service capabilities must enable customers to resolve simple blocks independently
 - Escalation procedures must ensure rapid resolution of complex blocking scenarios
 
-## 5. Data and Information Requirements
+## 5. ISO 20022 Message Types and Blocking Implementation (UPDATED)
 
-### 5.1 Transaction Data Elements
+### 5.1 Core Payment Messages for Blocking Control
+
+#### Primary Transaction Messages:
+- **pain.001** - Customer Credit Transfer Initiation
+  - Pre-transaction blocking evaluation during payment initiation
+  - Customer-facing blocking notifications and resolution workflows
+  - Integration with ERP and payment origination systems
+
+- **pacs.008** - Financial Institution to Financial Institution Customer Credit Transfer
+  - Real-time interbank transaction blocking before settlement
+  - Enhanced party data for comprehensive sanctions screening
+  - Structured data elements enable sophisticated blocking rules
+
+- **pacs.009** - Financial Institution Credit Transfer
+  - Bank-to-bank transaction blocking for institutional transfers
+  - High-value transaction monitoring and restriction enforcement
+  - Correspondent banking relationship-based blocking rules
+
+#### Transaction Status and Response Messages:
+- **pacs.002** - Financial Institution to Financial Institution Payment Status Report
+  - **Primary blocking notification message**
+  - Rejection status with specific reason codes for blocked transactions
+  - Mandatory response for rejected transactions due to blocking rules
+
+### 5.2 Key Blocking Response Mechanisms (UPDATED)
+
+#### pacs.002 Rejection Framework:
+**Transaction Status Codes:**
+- **RJCT (Reject)**: Mandatory status for blocked transactions
+- **ACCP (Accept)**: Confirmation for transactions passing blocking criteria
+- **PDNG (Pending)**: Temporary status during blocking evaluation
+
+**Critical Status Reason Codes for Blocking:**
+- **ExternalStatusReason1Code** for standardized rejection reasons
+- **Sanctions-related codes**: For OFAC, EU, UN watch list matches
+- **Compliance codes**: For AML, BSA, and regulatory requirement violations
+- **Account restriction codes**: For frozen, dormant, or restricted accounts
+- **Risk-based codes**: For fraud prevention and risk management blocks
+
+#### Enhanced Blocking Data Fields:
+
+**Party Information for Sanctions Screening:**
+- **Ultimate Debtor/Creditor**: Complete entity information with enhanced screening
+- **Legal Entity Identifier (LEI)**: 20-character codes for institutional identification
+- **Structured Addressing**: Enhanced address data for geographic blocking
+- **Purpose Codes**: Transaction purpose validation for compliance blocking
+
+**Transaction Context for Risk-Based Blocking:**
+- **Interbank Settlement Amount**: Amount-based blocking thresholds
+- **Currency Code**: Currency restriction enforcement
+- **Value Date**: Timing-based blocking rules
+- **UETR (Unique End-to-End Transaction Reference)**: Transaction tracking for block correlation
+
+### 5.3 Enhanced Sanctions and Compliance Blocking (ISO 20022)
+
+#### Improved Screening Capabilities:
+- **Rich Structured Data**: ISO 20022 provides ~9,000 characters vs. ~100 in legacy formats
+- **Enhanced Party Information**: Detailed customer and counterparty data for comprehensive screening
+- **Standardized Format**: Consistent data structure reduces false positives
+- **Extended Character Sets**: Support for international names and addresses
+
+#### Advanced Blocking Rules:
+- **Multi-field Correlation**: Combine multiple data elements for sophisticated blocking logic
+- **Pattern Recognition**: Enhanced data enables ML-based blocking algorithms
+- **Real-time Processing**: Structured data supports faster screening and blocking decisions
+- **Reduced False Positives**: Better data quality reduces unnecessary blocking of legitimate transactions
+
+### 5.4 Account Management and Restriction Messages
+
+#### Account Status Communication:
+- **camt.052** - Bank to Customer Account Report
+  - Real-time account blocking status communication
+  - Intraday blocking activity reporting
+  - Balance and limit restriction notifications
+
+- **camt.053** - Bank to Customer Statement
+  - Daily blocking activity summary
+  - Account restriction status reporting
+  - Historical blocking pattern analysis
+
+- **camt.054** - Bank to Customer Debit Credit Notification
+  - Individual transaction blocking notifications
+  - Immediate customer alerts for blocked transactions
+  - Blocking reason communication
+
+### 5.5 Investigation and Resolution Messages
+
+#### Blocking Investigation Workflow:
+- **camt.110** - Investigation Request
+  - Formal investigation initiation for blocked transactions
+  - Structured inquiry about blocking decisions
+  - Coordination with compliance and investigation teams
+
+- **camt.111** - Investigation Response
+  - Blocking investigation resolution reporting
+  - Documentation of blocking decision rationale
+  - Customer communication for block resolution
+
+#### Return and Reversal Messages:
+- **pacs.004** - Payment Return
+  - Return of funds for improperly blocked transactions
+  - Correction mechanism for false positive blocks
+  - Customer compensation for blocking errors
+
+- **camt.056** - FI to FI Payment Cancellation Request
+  - Cancellation requests for blocked transactions
+  - Administrative correction of blocking decisions
+  - Inter-bank coordination for block resolution
+
+### 5.6 Administrative and Error Handling Messages
+
+#### System Error and Blocking Failures:
+- **admi.002** - Message Reject
+  - System-level blocking message rejections
+  - Technical blocking failure notifications
+  - Message format error handling for blocking systems
+
+- **head.001** - Business Application Header
+  - Message routing for blocking notifications
+  - Priority handling for blocked transaction communications
+  - Audit trail for blocking message exchange
+
+## 6. Enhanced Blocking Capabilities with ISO 20022
+
+### 6.1 Advanced Sanctions Screening
+- **Comprehensive Party Data**: Enhanced debtor/creditor information enables thorough sanctions screening
+- **Address-Based Screening**: Structured addressing supports geographic sanctions enforcement
+- **Entity Relationship Analysis**: Enhanced data supports complex ownership and relationship screening
+- **Real-time List Updates**: Integration with current OFAC, EU, UN, and other sanctions databases
+
+### 6.2 Risk-Based Blocking Intelligence
+- **Behavioral Analysis**: Rich transaction data enables sophisticated pattern-based blocking
+- **Velocity Detection**: Enhanced timing and frequency data supports velocity-based blocking rules
+- **Relationship Mapping**: Comprehensive party data enables relationship-based risk assessment
+- **Contextual Analysis**: Purpose codes and remittance data support context-aware blocking
+
+### 6.3 Regulatory Compliance Enhancement
+- **AML Integration**: Enhanced customer data supports comprehensive AML blocking rules
+- **BSA Compliance**: Structured data elements support Bank Secrecy Act requirement enforcement
+- **Cross-border Monitoring**: Enhanced data supports international compliance requirement blocking
+- **Audit Trail Enhancement**: Structured data provides comprehensive blocking audit capabilities
+
+## 7. Data and Information Requirements
+
+### 7.1 Transaction Data Elements
 - Complete debtor and creditor information including names, addresses, and identifications
 - Account details including numbers, types, status, and restriction information
 - Transaction amounts, currencies, dates, and timing information
@@ -194,7 +317,7 @@ This document outlines comprehensive business requirements for debit and credit 
 - Network routing information including correspondent banks and intermediaries
 - Regulatory reporting codes and compliance-related data elements
 
-### 5.2 Risk and Compliance Data
+### 7.2 Risk and Compliance Data
 - Current sanctions lists from OFAC, EU, UN, and other regulatory authorities
 - Customer risk profiles and risk scoring information
 - Historical transaction patterns and behavioral baselines
@@ -202,7 +325,7 @@ This document outlines comprehensive business requirements for debit and credit 
 - Fraud indicators and suspicious activity patterns
 - Regulatory requirements and compliance obligations
 
-### 5.3 Reference and Master Data
+### 7.3 Reference and Master Data
 - Customer master data including identification, contact, and relationship information
 - Account master data including ownership, authorization, and restriction details
 - Beneficiary information including verification status and risk assessments
@@ -210,7 +333,7 @@ This document outlines comprehensive business requirements for debit and credit 
 - Currency information including restrictions and regulatory requirements
 - Business calendar information for timing-based blocking rules
 
-### 5.4 Operational and Performance Data
+### 7.4 Operational and Performance Data
 - Real-time transaction volumes and processing statistics
 - Blocking performance metrics and accuracy measurements
 - Customer communication logs and resolution tracking information
@@ -218,108 +341,79 @@ This document outlines comprehensive business requirements for debit and credit 
 - Investigation case information including status, findings, and resolutions
 - Audit trail data meeting regulatory retention and examination requirements
 
-## 6. Compliance and Regulatory Requirements
+## 8. Compliance and Regulatory Requirements
 
-### 6.1 Standards Compliance
+### 8.1 Standards Compliance
 - Full adherence to Fedwire ISO 20022 standards effective July 14, 2025
 - CHIPS ISO 20022 compliance per April 2024 implementation requirements
 - SWIFT MX messaging standard compliance by November 2025 migration deadline
 - Structured addressing implementation per November 2025 Fedwire requirements
 - Message format validation and business rule enforcement for all ISO 20022 communications
 
-### 6.2 Regulatory Compliance
+### 8.2 Regulatory Compliance
 - Bank Secrecy Act compliance for transaction monitoring and blocking requirements
 - Anti-Money Laundering regulation adherence for suspicious activity identification
 - OFAC sanctions compliance with real-time screening and blocking capabilities
 - FinCEN reporting compliance for blocked transactions and investigations
 - International compliance including SEPA, EU sanctions, and other regional requirements
 
-### 6.3 Data Protection and Security
+### 8.3 Data Protection and Security
 - Encryption requirements for all sensitive customer and transaction data
 - Access control and authorization for blocking system usage and administration
 - Privacy regulation compliance including GDPR for European customer data
 - Data retention and disposal per regulatory and business requirements
 - Cross-border data transfer compliance for international transaction processing
 
-### 6.4 Audit and Examination Readiness
+### 8.4 Audit and Examination Readiness
 - Comprehensive audit trail maintenance for all blocking activities
 - Regulatory examination preparation with documentation and evidence collection
 - Performance reporting for regulatory oversight of blocking effectiveness
 - Compliance testing and validation of blocking system functionality
 - Documentation of blocking policies, procedures, and business rules
 
-## 7. Integration and Connectivity Requirements
+## 9. Integration and Connectivity Requirements
 
-### 7.1 Payment Network Integration
+### 9.1 Payment Network Integration
 - Real-time connectivity with Fedwire Funds Service for domestic payment blocking
 - CHIPS network integration for high-value payment blocking capabilities
 - SWIFT network connectivity for international payment blocking functionality
 - FedNow Service integration for instant payment blocking requirements
-- ACH network coordination for related payment channel blocking
 
-### 7.2 Core Banking System Integration
+### 9.2 Core Banking System Integration
 - Real-time account status information for blocking decision support
 - Customer information access for comprehensive risk assessment
 - Transaction history integration for pattern analysis and blocking decisions
 - Account restriction and hold information for automated blocking triggers
 - Balance and limit information for transaction amount-based blocking
 
-### 7.3 Compliance and Risk System Integration
+### 9.3 Compliance and Risk System Integration
 - AML system integration for case management and investigation coordination
 - Fraud detection system connectivity for comprehensive risk assessment
 - KYC system integration for customer due diligence information
 - Sanctions screening system integration for real-time watch list checking
 - Regulatory reporting system connectivity for blocked transaction reporting
 
-### 7.4 External Service Integration
-- OFAC and international sanctions list integration with real-time updates
-- Third-party fraud detection service integration for enhanced risk assessment
-- Credit bureau integration for customer verification and risk assessment
-- Law enforcement and regulatory agency connectivity for investigation support
-- Industry threat intelligence integration for emerging risk identification
 
-### 7.5 Communication System Integration
-- Email system integration for customer and staff notifications
-- SMS service integration for urgent blocking alerts and communications
-- Customer portal integration for self-service blocking information and resolution
-- Mobile application connectivity for real-time blocking status updates
-- Call center system integration for customer service blocking support
+## 10. Success Criteria and Measurements
 
-## 8. Success Criteria and Measurements
-
-### 8.1 Risk Mitigation Effectiveness
+### 10.1 Risk Mitigation Effectiveness
 - Blocking accuracy exceeding 99% for legitimate risk scenarios
 - False positive rate maintained below 1% to minimize customer disruption
 - Fraud loss reduction of 95% or more through effective blocking
 - Regulatory compliance maintenance with zero violations or penalties
 - Customer protection improvement through proactive blocking measures
 
-### 8.2 Operational Performance
+### 10.2 Operational Performance
 - Blocking evaluation completion within 200 milliseconds for 99% of transactions
 - System availability exceeding 99.99% during business operating hours
 - Customer notification delivery within 30 seconds of blocking implementation
 - Investigation resolution within 4 hours for 90% of blocked transactions
 - Self-service resolution capability for 70% of customer-resolvable blocks
 
-### 8.3 Customer Experience
-- Customer satisfaction scores above 4.0/5 despite blocking implementation
-- Resolution time under 5 minutes for standard blocking scenarios
-- Clear communication delivery for 100% of blocking events
-- Self-service success rate above 70% for routine blocking resolutions
-- Complaint reduction regarding blocking accuracy and customer communication
+### 10.3 ISO 20022 Enhanced Capabilities
+- **Improved Screening Accuracy**: Measurable reduction in false positives through enhanced data
+- **Faster Processing**: Reduced blocking evaluation time through structured data processing
+- **Enhanced Compliance**: Better regulatory compliance through comprehensive party screening
+- **Customer Communication**: Improved customer experience through clear blocking reason communication
 
-### 8.4 Regulatory and Compliance
-- Zero regulatory violations related to transaction blocking requirements
-- 100% audit trail completeness for regulatory examinations
-- Timely regulatory reporting for all blocked transactions requiring disclosure
-- Successful regulatory examination outcomes with no blocking-related findings
-- Industry benchmark achievement for blocking effectiveness and compliance
-
-### 8.5 Business Impact
-- Return on investment achievement through fraud prevention and compliance cost reduction
-- Competitive advantage through superior transaction security and compliance
-- Brand reputation protection through effective risk management and customer service
-- Operational efficiency improvement through automated blocking and investigation processes
-- Market expansion capability through robust compliance and risk management infrastructure
-
-This comprehensive debit/credit blocking system ensures effective transaction security, regulatory compliance, and customer protection while maintaining operational efficiency and service quality across all wire payment networks and processing channels.
+This comprehensive debit/credit blocking system ensures effective transaction security, regulatory compliance, and customer protection while maintaining operational efficiency and service quality across all wire payment networks and processing channels, leveraging the enhanced capabilities of ISO 20022 messaging standards.
