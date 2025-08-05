@@ -1,4 +1,4 @@
-# Account Lookup System - Business Requirements
+# Account Lookup System - Business Requirements (Updated)
 
 ## 1. Executive Summary
 
@@ -70,7 +70,8 @@ This document outlines the business requirements for an Account Lookup System su
 - Account correction workflow must allow detail updates within 1-3 business days
 - Retry mechanisms must be implemented for temporary lookup failures
 
-### 3.8 Sanctions Screening Integration
+### 3.8 Sanctions Screening Integration (Fircosoft)
+- Intgerate with Fircosoft
 - Real-time OFAC SDN list screening must be performed during account lookup
 - Fircosoft or equivalent sanctions database integration required
 - Positive matches must immediately block transaction processing
@@ -83,18 +84,6 @@ This document outlines the business requirements for an Account Lookup System su
 - Failed lookup attempts must include detailed error codes and reasons
 - Account validation steps must be traceable for compliance audits
 - Seven-year retention period must be maintained for all lookup records per AML requirements
-
-### 3.10 Dashboard and Reporting
-- Real-time dashboard must display account lookup status and results
-- Debtor and creditor portals must show validated account details
-- Transaction history must be accessible with filtering and search capabilities
-- Downloadable compliance reports must be available for audit purposes
-- Exception reports must highlight failed or problematic lookups
-
-### 3.11 Notification System
-- In-app notifications must reference ISO 20022 transaction IDs
-- Administrator alerts must be generated for sanctions matches
-- Notification preferences must be configurable by user type
 
 ## 4. Non-Functional Requirements
 
@@ -142,35 +131,108 @@ This document outlines the business requirements for an Account Lookup System su
 - Real-time compliance monitoring and alerting
 - Automated compliance reporting generation
 
-## 5. ISO 20022 and Messaging Standards
+## 5. ISO 20022 and Messaging Standards (UPDATED)
 
-### 5.1 Required Message Formats
-- acmt.023 - Account identification and verification request messages
-- pacs.008 - Credit transfer execution with validated account details
-- pacs.002 - Transaction status updates for lookup outcomes
-- remt.001 - Structured remittance data for invoice context
-- camt.052/053 - Account balance and status verification messages
+### 5.1 Required Message Formats (CORRECTED)
 
-### 5.2 Key Data Fields Implementation
-- Debtor details must include Name, Account, and Ultimate Debtor with structured addresses
-- Creditor details must include Name, Account, Ultimate Creditor, and Agent BIC
-- Transaction data must capture Amount, Currency, End-to-End ID, and Invoice Reference
-- Structured postal addresses required by November 2025 per Fedwire hybrid/end-state rules
-- Enhanced data elements for cross-border payment transparency
+**Note**: The original document incorrectly listed acmt.023 as a required message format. Based on current Fedwire implementation and market practices, the following are the correct message types for account lookup:
 
-### 5.3 Network Interoperability
-- Full compatibility with Fedwire ISO 20022 message formats
-- CHIPS network integration with native ISO 20022 support
-- SWIFT MX format compatibility for international transfers
-- Legacy SWIFT MT format support until July 14, 2025 sunset
-- FAIM format phase-out per regulatory timeline
+#### Core Payment Messages:
+- **pacs.008** - Financial Institution to Financial Institution Customer Credit Transfer (primary wire transfer message)
+- **pacs.009** - Financial Institution Credit Transfer (bank-to-bank transfers)
+- **pacs.004** - Payment Return (for failed or returned payments)
+- **pacs.002** - Financial Institution to Financial Institution Payment Status Report (status updates)
 
-### 5.4 Message Validation and Processing
-- Real-time message format validation against ISO 20022 schemas
-- Business rule validation for mandatory and conditional fields
-- Cross-field consistency checks for account and transaction data
-- Network-specific validation rules for Fedwire, CHIPS, and SWIFT
-- Error message generation with specific validation failure details
+#### Account and Cash Management Messages:
+- **camt.052** - Bank to Customer Account Report (intraday account activity)
+- **camt.053** - Bank to Customer Statement (end-of-day account statements)
+- **camt.054** - Bank to Customer Debit Credit Notification (individual transaction notifications)
+
+#### Remittance Messages:
+- **remt.001** - Remittance Advice (structured remittance information for invoice data)
+- **remt.002** - Remittance Location Advice (pointer to remittance information location)
+
+#### Administrative Messages:
+- **admi.002** - Message Reject (for invalid or unprocessable messages)
+- **head.001** - Business Application Header (message envelope)
+
+**Important Note on acmt.023**: The acmt.023 (Identification Verification Request) and acmt.024 (Identification Verification Report) messages are primarily used for Verification of Payee (VOP) services in SEPA payments starting October 2025. These are not currently part of the standard Fedwire account lookup process, though they may be relevant for future enhanced account verification services.
+
+### 5.2 Key Data Fields Implementation (UPDATED)
+
+#### Debtor Information (Enhanced Requirements):
+- **Debtor Name**: Full legal name matching account ownership records
+- **Debtor Account**: Account number with proper formatting validation
+- **Debtor Agent**: Bank identification (routing number/BIC)
+- **Ultimate Debtor**: With structured postal addresses (mandatory post-November 2025)
+  - Country (ISO 3166-1 alpha-2 code)
+  - Structured address lines per CBPR+ hybrid/end-state requirements
+  - City, state/province, postal code
+
+#### Creditor Information (Enhanced Requirements):
+- **Creditor Name**: Beneficiary name with validation against bank records
+- **Creditor Account**: IBAN or account number with existence verification
+- **Creditor Agent**: BIC code for agent bank
+- **Ultimate Creditor**: With structured postal addresses (mandatory post-November 2025)
+- **Intermediary Agent 1/2**: For correspondent banking chains
+
+#### Transaction Data (Enhanced Requirements):
+- **Amount**: Currency and amount with validation
+- **Currency**: ISO 4217 currency codes
+- **End-to-End ID**: Unique End-to-End Transaction Reference (UETR) - UUID v4 format
+- **Transaction ID**: Unique transaction identifier
+- **Instruction ID**: Payment instruction reference
+- **Settlement Method**: Settlement mechanism (e.g., CLRG for clearing)
+
+#### Remittance Information (Structured):
+- **Structured Remittance Data**: Using remt.001 format
+  - Invoice number, date, amount
+  - Purchase order references
+  - Contract numbers and terms
+  - Tax information and regulatory codes
+- **Unstructured Remittance**: Free-form text (maximum 140 characters for most systems)
+
+#### Address Requirements (Post-November 2025):
+- **Structured Format**: Department, sub-department, street name, building number
+- **Country Code**: Mandatory ISO 3166-1 alpha-2
+- **Address Type**: Postal vs. geolocation addressing
+- **Validation Rules**: Address format validation per destination country
+
+### 5.3 Network Interoperability (UPDATED)
+
+#### Fedwire Funds Service:
+- **Implementation Date**: July 14, 2025 (completed)
+- **Format**: Native ISO 20022 XML (FAIM format sunset)
+- **Message Envelope**: Business Application Header (head.001) required
+- **UETR Requirement**: Mandatory for all value messages (pacs.008, pacs.009, pacs.004)
+
+#### CHIPS Network:
+- **Implementation Date**: April 2024 (completed)
+- **Format**: Native ISO 20022 support
+- **Interoperability**: Full compatibility with Fedwire ISO format
+
+#### SWIFT Network:
+- **CBPR+ Timeline**: November 2025 for enhanced data requirements
+- **MT Format**: Continues alongside MX until further notice
+- **Structured Addresses**: Hybrid/end-state requirements align with Fedwire
+
+### 5.4 Message Validation and Processing (UPDATED)
+
+#### Real-time Validation:
+- **Schema Validation**: Against ISO 20022 XSD schemas
+- **Business Rules**: Mandatory and conditional field validation
+- **Cross-field Consistency**: Account/routing number combinations
+- **UETR Format**: UUID v4 format validation (pattern: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx)
+
+#### Network-Specific Rules:
+- **Fedwire**: UETR mandatory, structured addresses (post-Nov 2025)
+- **CHIPS**: Full ISO 20022 compliance, high-value transaction focus
+- **SWIFT**: CBPR+ data model compliance for cross-border payments
+
+#### Error Handling:
+- **admi.002**: For message format errors with specific error codes
+- **pacs.002 RJCT**: For business rule violations
+- **Timeout Handling**: For network communication failures
 
 ## 6. Integration Requirements
 
@@ -185,12 +247,12 @@ This document outlines the business requirements for an Account Lookup System su
 - Bank API direct connections for real-time account status
 - Account ownership verification through multiple validation methods
 - Third-party verification service fallback mechanisms
-- Auto Retrieve integration for account lookups
+- Integration with emerging VOP (Verification of Payee) services
 
-### 6.3 Bank API Integration
+### 6.3 Bank API Integration (Hogan or Auto Retrieve)
 - Direct bank API connections for major correspondent institutions
-- acmt.023 message format for account identification requests
-- camt.052 integration for real-time account balance verification
+- Real-time account balance verification via camt.052 integration
+- Account statement processing via camt.053 for reconciliation
 - Secure API authentication and authorization protocols
 - Rate limiting and throttling for bank API consumption
 
@@ -200,10 +262,6 @@ This document outlines the business requirements for an Account Lookup System su
 - Additional global sanctions list integration (EU, UN, etc.)
 - Fuzzy matching algorithms for name and entity screening
 - API-based screening with sub-second response times
-
-### 6.5 Notification Service Integration
-- Webhook support for real-time status updates
-- Multi-channel notification routing based on urgency and user preferences
 
 ## 7. Constraints and Limitations
 
@@ -266,21 +324,15 @@ This document outlines the business requirements for an Account Lookup System su
 - System availability of 99.99% during business hours
 
 ### 8.5 Technical Performance Metrics
-- System throughput of 10,000+ lookups per hour
+- System throughput of 100,000+ lookups per hour
 - Database response time under 100ms for 99% of queries
 - API integration uptime of 99.9% across all external services
 - Memory and CPU utilization optimization below 80% under normal load
 - Zero data loss incidents with complete backup recovery capability
 
-## 9. Implementation Strategy
+## 9. Others
 
-### 9.1 Development Phases
-- **Phase 1**: Core account lookup and validation functionality with basic ISO 20022 support
-- **Phase 2**: Advanced sanctions screening integration and multi-account support
-- **Phase 3**: Full ISO 20022 compliance and structured addressing implementation
-- **Phase 4**: Enhanced analytics, AI-driven fraud detection, and predictive validation
-
-### 9.2 Testing Requirements
+### 9.1 Testing Requirements
 - **Unit Testing**: Comprehensive coverage of all lookup algorithms and validation logic
 - **Integration Testing**: End-to-end testing with Fedwire, CHIPS, SWIFT, and bank APIs
 - **Performance Testing**: Load testing with 10,000+ concurrent lookup requests
@@ -288,7 +340,7 @@ This document outlines the business requirements for an Account Lookup System su
 - **Compliance Testing**: Regulatory requirement validation and audit simulation
 - **User Acceptance Testing**: Real-world scenario testing with operations teams
 
-### 9.3 Deployment Considerations
+### 9.2 Deployment Considerations
 - **Blue-Green Deployment**: Zero-downtime deployment strategy for production updates
 - **Canary Releases**: Gradual rollout with monitoring for new features
 - **Rollback Procedures**: Immediate rollback capability for critical issues
