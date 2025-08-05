@@ -170,15 +170,7 @@ This document outlines comprehensive business requirements for funds posting and
 - Data replication and backup systems protecting all posting information
 - Business continuity planning for extended outage scenarios with manual procedures
 
-### 4.4 Scalability and Growth Management
-- Horizontal scaling architecture supporting transaction volume growth
-- Database optimization for large-scale posting data management and retrieval
-- Load balancing across multiple posting engines for optimal performance
-- Cloud-native deployment enabling elastic resource allocation based on demand
-- Performance testing under peak load conditions with capacity expansion planning
-- Geographic distribution support for global posting operations
-
-### 4.5 Security and Data Protection
+### 4.4 Security and Data Protection
 - End-to-end encryption for all posting data using AES-256 standards
 - Tokenization of sensitive account identifiers and financial information
 - Multi-factor authentication for posting system access and administration
