@@ -1,35 +1,298 @@
-Business Requirements for Account Lookup (Auto Retrieve) in Wire Payments Processing
-Overview
-Account lookup (auto retrieve) in wire payments processing enables the automatic retrieval and validation of debtor (payer) and creditor (payee) account details to ensure accurate, secure, and compliant high-value credit transfers via Fedwire Funds Service, The Clearing House’s CHIPS, or SWIFT. This system reduces errors, enhances efficiency, and verifies account legitimacy before initiating transactions. It leverages ISO 20022 standards, adopted by Fedwire (July 14, 2025) and CHIPS (April 2024), and SWIFT’s MX messaging (CBPR+ by November 2025), replacing legacy SWIFT MT and Fedwire FAIM formats to provide structured, interoperable data for precise account lookups.
-Business Requirements
-1. Functional Requirements
-1.1 Account Lookup Scope: Automatically retrieve and validate debtor and creditor account details (e.g., IBAN, DDA, SWIFT BIC, routing number) for wire payments, ensuring accounts are active, in good standing, and free from restrictions (e.g., ring-fenced, holds) using ISO 20022 MX messages (e.g., acmt.023 for account verification).1.2 Real-Time Auto Retrieval: Integrate with bank or payment processor APIs to fetch account details in real time, confirming debtor/creditor account validity and ownership before transaction processing via Fedwire, CHIPS, or SWIFT.1.3 Data Extraction: Use ISO 20022 fields for lookups, including:  
+# Account Lookup System - Business Requirements
 
-Debtor Details: Name, Debtor Account, Ultimate Debtor (structured postal addresses required by November 2025 per Fedwire’s hybrid/end-state rules).  
-Creditor Details: Name, Creditor Account, Ultimate Creditor, Agent BIC.  
-Transaction Context: End-to-End ID, Invoice Reference (e.g., via remt.001).1.4 Account Validation: Verify account status, including:  
-Active and in good standing (e.g., not closed, frozen, or delinquent).  
-Free from ring-fencing or holds (e.g., legal disputes, garnishments).  
-Matches authorized debtor/creditor details (e.g., via micro-deposits, Plaid Auth).1.5 Multi-Account Support: Allow debtors to select from multiple accounts (e.g., checking, savings) for lookup, with validation of ownership and status for each.1.6 Error Handling: If account lookup fails (e.g., invalid account, missing data), pause the transaction, notify the debtor/creditor, and provide options to correct details or select an alternative account.1.7 Sanctions Screening Integration: Cross-reference account details with sanctions lists (e.g., OFAC SDN, Fircosoft) during lookup to prevent transactions with restricted entities.1.8 Transaction Logging: Record all lookup attempts, results, and validations, including ISO 20022 references (e.g., account IDs, transaction IDs), for audit and compliance purposes.1.9 Dashboard and Reporting: Provide a dashboard for debtors and creditors to view account lookup results, validated account details, and transaction history, with downloadable compliance reports.1.10 Notifications: Alert debtors, creditors, and administrators via email, SMS, or in-app messages about lookup outcomes (e.g., success, invalid account, or restrictions), referencing ISO 20022 transaction IDs.
+## 1. Executive Summary
 
-2. Non-Functional Requirements
-2.1 Compliance: Adhere to Fedwire and CHIPS ISO 20022 standards (effective July 14, 2025, and April 2024, respectively), SWIFT MX (CBPR+ by November 2025), OFAC, AML, FinCEN, and SEPA regulations. Retain lookup records for seven years per AML requirements.2.2 Security: Encrypt sensitive data (AES-256), tokenize account details (e.g., IBAN, DDA), and use HTTPS/OAuth for API integrations with Fedwire, CHIPS, SWIFT, and account verification services.2.3 Performance: Complete account lookups in under 500ms to support high-volume wire payments without delays.2.4 Scalability: Handle at least 10,000 lookup requests per hour, supporting large-scale B2B payments.2.5 Reliability: Achieve 99.99% uptime, with failover mechanisms for continuous lookup operations.2.6 Auditability: Log all lookup events, validations, and errors, with ISO 20022 references, for regulatory audits and compliance reporting.  
-3. ISO 20022 and Messaging Standards
-3.1 Message Formats: Use ISO 20022 MX messages for account lookup:  
+This document outlines the business requirements for an Account Lookup System supporting wire payments processing, encompassing real-time account validation, ISO 20022 compliance, sanctions screening, and integration with Fedwire, CHIPS, and SWIFT networks. The system ensures accurate debtor and creditor account verification while maintaining regulatory compliance and supporting high-volume transaction processing.
 
-acmt.023: Account identification and verification request to retrieve and validate account details.  
-pacs.008: Credit transfer execution, containing validated debtor/creditor details.  
-pacs.002: Transaction status updates, confirming lookup outcomes or errors.  
-remt.001: Structured remittance data for invoice and payment context.  
-camt.052/053: Account balance and status messages to verify account standing.3.2 Key Fields for Lookup: Leverage ISO 20022 fields for accurate retrieval:  
-Debtor Details: Name, Debtor Account, Ultimate Debtor (structured postal addresses required by November 2025 per Fedwire’s hybrid/end-state rules).  
-Creditor Details: Name, Creditor Account, Ultimate Creditor, Agent BIC.  
-Transaction Data: Amount, Currency, End-to-End ID, Invoice Reference.3.3 Interoperability: Ensure compatibility with Fedwire, CHIPS, and SWIFT MX formats, phasing out SWIFT MT (e.g., MT103, MT202) and FAIM formats post-July 14, 2025.
+## 2. Scope and Objectives
 
-4. Constraints
-4.1 Regulatory Compliance: Comply with Fedwire/CHIPS ISO 20022 mandates and SWIFT’s MX migration timeline. Use structured addresses post-November 2025. Perform mandatory OFAC/AML screening during lookups.4.2 Data Limitations: Avoid local file I/O or non-API network calls. Use secure databases for account and lookup data storage.4.3 Accuracy: Ensure lookups return accurate, real-time account details, validating status and restrictions to prevent errors.4.4 Authorization: Verify debtor accounts (e.g., micro-deposits, Plaid Auth) and creditor accounts (e.g., SWIFT BIC, routing number) to confirm legitimacy and ownership during lookup.4.5 Error Handling: Pause transactions for failed lookups (e.g., invalid account, restrictions), notify parties, and support corrections or alternative account selection within 1-3 days.  
-5. Integration Requirements
-5.1 Payment Processors: Integrate with Fedwire, CHIPS, or SWIFT for wire transfers, and Plaid or Stripe for ACH and account verification.5.2 Bank APIs: Connect to debtor and creditor banks for real-time account lookups (e.g., using acmt.023 or camt.052).5.3 Sanctions Databases: Integrate with OFAC SDN and Fircosoft for screening during lookups.5.4 APIs: Use secure APIs for account verification (acmt.023), transaction processing (pacs.008), and status updates (pacs.002).5.5 Notification Systems: Integrate with SendGrid, Twilio, or Firebase for debtor, creditor, and administrator notifications.  
-6. Success Criteria
-6.1 Accuracy: Achieve 100% accuracy in account lookups, ensuring valid, active accounts with no restrictions.6.2 Compliance: Pass OFAC, AML, and regulatory audits with zero violations, meeting Fedwire, CHIPS, and SWIFT standards.6.3 Efficiency: Reduce transaction errors due to invalid accounts by >95%.6.4 User Experience: Enable debtors and creditors to resolve lookup issues within 5 minutes via the dashboard.  
-This account lookup system leverages ISO 20022’s structured data to ensure secure, compliant, and efficient wire payments, validating account details while aligning with Fedwire, CHIPS, and SWIFT standards.
+### 2.1 Primary Objectives
+- Provide real-time account lookup and validation for wire payment transactions
+- Ensure compliance with Fedwire, CHIPS, and SWIFT ISO 20022 migration requirements
+- Integrate sanctions screening and AML compliance into the lookup process
+- Support structured addressing requirements per November 2025 Fedwire mandates
+- Enable seamless multi-account support for debtors and creditors
+
+### 2.2 In-Scope Account Types
+- Domestic bank accounts (DDA, checking, savings)
+- International correspondent accounts (nostro/vostro)
+- SWIFT-enabled accounts with BIC identification
+- CHIPS participant accounts
+- Multi-currency accounts for international wire transfers
+
+## 3. Functional Requirements
+
+### 3.1 Account Identification and Retrieval
+- System must support real-time account lookup using account number, IBAN, or routing information
+- Account validation must verify account existence, ownership, and current status
+- System must retrieve complete account details including name, address, and bank information
+- Multi-account lookup capability must allow selection from multiple debtor accounts
+- Account ownership verification must be performed using micro-deposits, Plaid Auth, or equivalent methods
+
+### 3.2 Debtor Account Requirements
+- System must capture and validate debtor name matching account ownership records
+- Debtor account number and routing information must be validated against bank records
+- Ultimate debtor information must include structured postal addresses per Fedwire November 2025 requirements
+- System must support multiple debtor account selection (checking, savings, business accounts)
+- Debtor account status verification must include active status, no holds, and sufficient authorization
+
+### 3.3 Creditor Account Requirements
+- Creditor name and account details must be validated against beneficiary bank records
+- Creditor account number must be verified for accuracy and existence
+- Ultimate creditor information must comply with structured addressing requirements
+- Agent BIC must be validated for international wire transfers
+- Correspondent banking relationships must be verified for cross-border payments
+
+### 3.4 Transaction Context Validation
+- End-to-End ID must be generated and validated for transaction tracking
+- Invoice reference information must be captured via remt.001 structured remittance
+- Transaction amount and currency must be validated against account capabilities
+- Payment purpose and regulatory codes must be verified for compliance
+
+### 3.5 Account Status Validation
+- Account must be verified as active and in good standing
+- System must check for account closure, freezing, or delinquent status
+- Ring-fencing, legal holds, and garnishments must be identified and flagged
+- Account restrictions and transaction limits must be validated
+- Dormant account status must be identified and handled appropriately
+
+### 3.6 Multi-Account Support
+- Debtors must be able to select from multiple authorized accounts
+- Account ownership validation must be performed for each selectable account
+- Account type restrictions (checking vs savings) must be enforced per transaction type
+- Balance and limit verification must be performed for selected accounts
+- Historical transaction patterns must be analyzed for fraud detection
+
+### 3.7 Error Handling and Recovery
+- Failed account lookups must pause transaction processing immediately
+- Debtor and creditor notifications must be sent for lookup failures
+- Alternative account selection options must be provided for failed lookups
+- Account correction workflow must allow detail updates within 1-3 business days
+- Retry mechanisms must be implemented for temporary lookup failures
+
+### 3.8 Sanctions Screening Integration
+- Real-time OFAC SDN list screening must be performed during account lookup
+- Fircosoft or equivalent sanctions database integration required
+- Positive matches must immediately block transaction processing
+- False positive resolution workflow must be available for legitimate transactions
+- Sanctions screening results must be logged with full audit trail
+
+### 3.9 Transaction Logging and Audit
+- All account lookup attempts must be logged with timestamp and user identification
+- Lookup results and validation outcomes must be recorded with ISO 20022 references
+- Failed lookup attempts must include detailed error codes and reasons
+- Account validation steps must be traceable for compliance audits
+- Seven-year retention period must be maintained for all lookup records per AML requirements
+
+### 3.10 Dashboard and Reporting
+- Real-time dashboard must display account lookup status and results
+- Debtor and creditor portals must show validated account details
+- Transaction history must be accessible with filtering and search capabilities
+- Downloadable compliance reports must be available for audit purposes
+- Exception reports must highlight failed or problematic lookups
+
+### 3.11 Notification System
+- In-app notifications must reference ISO 20022 transaction IDs
+- Administrator alerts must be generated for sanctions matches
+- Notification preferences must be configurable by user type
+
+## 4. Non-Functional Requirements
+
+### 4.1 Compliance Requirements
+- Full compliance with Fedwire ISO 20022 standards effective July 14, 2025
+- CHIPS ISO 20022 compliance per April 2024 requirements
+- SWIFT MX (CBPR+) compliance by November 2025 deadline
+- OFAC, AML, and FinCEN regulatory compliance throughout lookup process
+- SEPA regulation compliance for European account lookups
+- Seven-year data retention for all lookup records per AML requirements
+
+### 4.2 Security Requirements
+- AES-256 encryption for all sensitive account data at rest and in transit
+- Account detail tokenization for IBAN and DDA information
+- HTTPS/TLS 1.3 for all API communications
+- OAuth 2.0 authentication for integration with external services
+- Multi-factor authentication for administrative access
+- End-to-end encryption for account lookup requests and responses
+
+### 4.3 Performance Requirements
+- Account lookup completion within 500ms for 95% of requests
+- System must handle minimum 10,000 lookup requests per hour
+- Concurrent processing of up to 1,000 simultaneous lookup requests
+- Response time degradation must not exceed 10% under peak load
+- Database query optimization for sub-100ms account retrieval
+
+### 4.4 Scalability Requirements
+- Horizontal scaling capability to support 100,000+ daily lookups
+- Auto-scaling based on transaction volume and processing demand
+- Load balancing across multiple processing nodes
+- Database partitioning and sharding for large-scale account data
+- Caching mechanisms for frequently accessed account information
+
+### 4.5 Reliability Requirements
+- 99.99% system uptime with maximum 4.38 minutes monthly downtime
+- Automatic failover mechanisms for continuous lookup operations
+- Database replication and backup systems for data protection
+- Circuit breaker patterns for external API integration resilience
+- Health monitoring and automated recovery procedures
+
+### 4.6 Auditability Requirements
+- Comprehensive logging of all lookup events with immutable timestamps
+- Regulatory audit trail with ISO 20022 message references
+- Tamper-evident log storage with cryptographic integrity verification
+- Real-time compliance monitoring and alerting
+- Automated compliance reporting generation
+
+## 5. ISO 20022 and Messaging Standards
+
+### 5.1 Required Message Formats
+- acmt.023 - Account identification and verification request messages
+- pacs.008 - Credit transfer execution with validated account details
+- pacs.002 - Transaction status updates for lookup outcomes
+- remt.001 - Structured remittance data for invoice context
+- camt.052/053 - Account balance and status verification messages
+
+### 5.2 Key Data Fields Implementation
+- Debtor details must include Name, Account, and Ultimate Debtor with structured addresses
+- Creditor details must include Name, Account, Ultimate Creditor, and Agent BIC
+- Transaction data must capture Amount, Currency, End-to-End ID, and Invoice Reference
+- Structured postal addresses required by November 2025 per Fedwire hybrid/end-state rules
+- Enhanced data elements for cross-border payment transparency
+
+### 5.3 Network Interoperability
+- Full compatibility with Fedwire ISO 20022 message formats
+- CHIPS network integration with native ISO 20022 support
+- SWIFT MX format compatibility for international transfers
+- Legacy SWIFT MT format support until July 14, 2025 sunset
+- FAIM format phase-out per regulatory timeline
+
+### 5.4 Message Validation and Processing
+- Real-time message format validation against ISO 20022 schemas
+- Business rule validation for mandatory and conditional fields
+- Cross-field consistency checks for account and transaction data
+- Network-specific validation rules for Fedwire, CHIPS, and SWIFT
+- Error message generation with specific validation failure details
+
+## 6. Integration Requirements
+
+### 6.1 Payment Network Integration
+- Direct integration with Fedwire for domestic account verification
+- CHIPS network connectivity for high-value payment account validation
+- SWIFT network integration for international account lookup
+- Real-time API connectivity with 99.9% availability requirement
+- Secure message encryption and authentication for all network communications
+
+### 6.2 Account Verification Services
+- Bank API direct connections for real-time account status
+- Account ownership verification through multiple validation methods
+- Third-party verification service fallback mechanisms
+- Auto Retrieve integration for account lookups
+
+### 6.3 Bank API Integration
+- Direct bank API connections for major correspondent institutions
+- acmt.023 message format for account identification requests
+- camt.052 integration for real-time account balance verification
+- Secure API authentication and authorization protocols
+- Rate limiting and throttling for bank API consumption
+
+### 6.4 Sanctions Database Integration
+- Real-time OFAC SDN list integration with hourly updates
+- Fircosoft database connectivity for comprehensive sanctions screening
+- Additional global sanctions list integration (EU, UN, etc.)
+- Fuzzy matching algorithms for name and entity screening
+- API-based screening with sub-second response times
+
+### 6.5 Notification Service Integration
+- Webhook support for real-time status updates
+- Multi-channel notification routing based on urgency and user preferences
+
+## 7. Constraints and Limitations
+
+### 7.1 Regulatory Constraints
+- Mandatory compliance with Fedwire/CHIPS ISO 20022 effective dates
+- SWIFT MX migration timeline adherence by November 2025
+- Structured address implementation post-November 2025
+- Mandatory OFAC/AML screening for all account lookups
+- Data residency requirements for cross-border account information
+
+### 7.2 Technical Constraints
+- No local file I/O operations for account data storage
+- API-only integration approach for external data sources
+- Secure database storage for all account and lookup data
+- Cloud-native architecture for scalability and reliability
+- Microservices architecture for component isolation and scaling
+
+### 7.3 Data Accuracy Constraints
+- Real-time account detail accuracy requirement of 99.99%
+- Account status validation must reflect current banking system state
+- Cross-validation against multiple data sources for accuracy assurance
+- Automated data quality monitoring and alerting
+- Regular reconciliation with authoritative account databases
+
+### 7.4 Authorization and Access Constraints
+- Debtor account verification through micro-deposits or Plaid Auth
+- Creditor account validation via SWIFT BIC or routing number verification
+- Multi-level authorization for high-value transaction account lookups
+- Role-based access control for system administration and monitoring
+- Customer consent management for account information access
+
+### 7.5 Error Handling Constraints
+- Transaction pause requirement for any failed account lookup
+- Immediate notification to all relevant parties for lookup failures
+- 1-3 business day window for account correction and resubmission
+- Alternative account selection workflow for failed primary lookups
+- Escalation procedures for unresolvable account lookup issues
+
+## 8. Success Criteria and KPIs
+
+### 8.1 Accuracy Metrics
+- 100% accuracy in account lookup results with zero false positives
+- Account status validation accuracy of 99.99%
+- Cross-reference validation success rate of 99.95%
+- Sanctions screening accuracy with zero false negatives
+- Data quality score maintenance above 99.9%
+
+### 8.2 Compliance Metrics
+- Zero regulatory violations in OFAC, AML, and banking audits
+- 100% compliance with Fedwire, CHIPS, and SWIFT standards
+- Complete audit trail availability for all regulatory examinations
+- Timely regulatory reporting with 100% accuracy
+- Sanctions screening completeness rate of 100%
+
+### 8.3 Efficiency Metrics
+- 95% reduction in transaction errors due to invalid account information
+- Account lookup completion within 500ms for 95% of requests
+- Straight-through processing rate of 95%+ for valid accounts
+- Exception resolution within 5 minutes via dashboard interface
+- System availability of 99.99% during business hours
+
+### 8.5 Technical Performance Metrics
+- System throughput of 10,000+ lookups per hour
+- Database response time under 100ms for 99% of queries
+- API integration uptime of 99.9% across all external services
+- Memory and CPU utilization optimization below 80% under normal load
+- Zero data loss incidents with complete backup recovery capability
+
+## 9. Implementation Strategy
+
+### 9.1 Development Phases
+- **Phase 1**: Core account lookup and validation functionality with basic ISO 20022 support
+- **Phase 2**: Advanced sanctions screening integration and multi-account support
+- **Phase 3**: Full ISO 20022 compliance and structured addressing implementation
+- **Phase 4**: Enhanced analytics, AI-driven fraud detection, and predictive validation
+
+### 9.2 Testing Requirements
+- **Unit Testing**: Comprehensive coverage of all lookup algorithms and validation logic
+- **Integration Testing**: End-to-end testing with Fedwire, CHIPS, SWIFT, and bank APIs
+- **Performance Testing**: Load testing with 10,000+ concurrent lookup requests
+- **Security Testing**: Penetration testing and vulnerability assessment
+- **Compliance Testing**: Regulatory requirement validation and audit simulation
+- **User Acceptance Testing**: Real-world scenario testing with operations teams
+
+### 9.3 Deployment Considerations
+- **Blue-Green Deployment**: Zero-downtime deployment strategy for production updates
+- **Canary Releases**: Gradual rollout with monitoring for new features
+- **Rollback Procedures**: Immediate rollback capability for critical issues
+- **Monitoring and Alerting**: Comprehensive system health monitoring
+- **Documentation**: Complete technical and user documentation delivery
+
+This comprehensive account lookup system ensures secure, compliant, and efficient validation of debtor and creditor accounts while supporting the transition to ISO 20022 standards across all major payment networks.
