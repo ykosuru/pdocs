@@ -1,15 +1,17 @@
-Drawdown Functionality for Payment Processing: Debtor and Creditor
-Overview: Drawdown functionality in payment processing enables automated fund withdrawals from a debtor’s bank account to settle obligations to a creditor, typically via wire transfers or ACH. This is used in scenarios like loan repayments, vendor payments, or recurring B2B transactions. The system ensures secure, compliant, and efficient transfers while maintaining transparency for both parties.
-Narrative: The process begins with the debtor (payer) agreeing to a payment schedule or terms with the creditor (payee), such as monthly loan repayments or invoice settlements. The debtor provides bank account details, which are verified and tokenized for security. The creditor submits their bank account information to receive funds. A payment processing system, integrated with a provider like Stripe, Plaid, or a bank API, schedules drawdowns based on predefined triggers (e.g., due dates or invoice terms). On the scheduled date, the system debits the debtor’s account and credits the creditor’s account, logging the transaction and notifying both parties. If a payment fails (e.g., due to insufficient funds), the system retries the drawdown and alerts the debtor. Both parties can access a dashboard to track payment history, update account details, or resolve disputes, ensuring a seamless and transparent process.
-Rules and Constraints:
+# Drawdown Functionality for Payment Processing: Debtor and Creditor
 
-Compliance: Adhere to regulations like NACHA (US ACH), SEPA (Europe), or SWIFT (wire transfers). Obtain explicit debtor consent via signed authorization forms or digital mandates, retained for the required period (e.g., two years for ACH).
-Security: Tokenize bank account details; never store raw data. Use HTTPS, encryption (e.g., AES-256), and OAuth for API interactions. Implement anti-money laundering (AML) checks for wire transfers.
-Authorization: Verify debtor bank accounts (e.g., micro-deposits or instant verification) and creditor accounts to ensure accuracy.
-Scheduling: Support fixed (e.g., monthly) or event-based (e.g., invoice due) drawdowns, with flexibility for variable amounts.
-Notifications: Notify debtors 3-7 days before drawdowns (per regulations) and confirm transaction outcomes to both parties via email, SMS, or in-app messages.
-Error Handling: Retry failed payments (e.g., after 1, 3, or 7 days), notify debtors of failures, and allow account updates. Provide dispute resolution mechanisms for unauthorized drawdowns.
-Transparency: Clearly communicate schedules, amounts, and terms. Maintain audit trails for all transactions.
-Limitations: Avoid local file I/O or network calls outside the payment processor’s API. Ensure compatibility with the chosen processor’s capabilities (e.g., no fontspec for non-Latin scripts unless using XeLaTeX).
+**Overview**: Drawdown functionality in payment processing enables automated fund withdrawals from a debtor’s bank account to settle obligations to a creditor, typically via wire transfers or ACH. This is used in scenarios like loan repayments, vendor payments, or recurring B2B transactions. The system ensures secure, compliant, and efficient transfers while maintaining transparency for both parties.
+
+**Narrative**: The process begins with the debtor (payer) agreeing to a payment schedule or terms with the creditor (payee), such as monthly loan repayments or invoice settlements. The debtor provides bank account details, which are verified and tokenized for security. The creditor submits their bank account information to receive funds. A payment processing system, integrated with a provider like Stripe, Plaid, or a bank API, schedules drawdowns based on predefined triggers (e.g., due dates or invoice terms). On the scheduled date, the system debits the debtor’s account and credits the creditor’s account, logging the transaction and notifying both parties. If a payment fails (e.g., due to insufficient funds), the system retries the drawdown and alerts the debtor. Both parties can access a dashboard to track payment history, update account details, or resolve disputes, ensuring a seamless and transparent process.
+
+**Rules and Constraints**:
+- **Compliance**: Adhere to regulations like NACHA (US ACH), SEPA (Europe), or SWIFT (wire transfers). Obtain explicit debtor consent via signed authorization forms or digital mandates, retained for the required period (e.g., two years for ACH).
+- **Security**: Tokenize bank account details; never store raw data. Use HTTPS, encryption (e.g., AES-256), and OAuth for API interactions. Implement anti-money laundering (AML) checks for wire transfers.
+- **Authorization**: Verify debtor bank accounts (e.g., micro-deposits or instant verification) and creditor accounts to ensure accuracy.
+- **Scheduling**: Support fixed (e.g., monthly) or event-based (e.g., invoice due) drawdowns, with flexibility for variable amounts.
+- **Notifications**: Notify debtors 3-7 days before drawdowns (per regulations) and confirm transaction outcomes to both parties via email, SMS, or in-app messages.
+- **Error Handling**: Retry failed payments (e.g., after 1, 3, or 7 days), notify debtors of failures, and allow account updates. Provide dispute resolution mechanisms for unauthorized drawdowns.
+- **Transparency**: Clearly communicate schedules, amounts, and terms. Maintain audit trails for all transactions.
+- **Limitations**: Avoid local file I/O or network calls outside the payment processor’s API. Ensure compatibility with the chosen processor’s capabilities (e.g., no fontspec for non-Latin scripts unless using XeLaTeX).
 
 This system ensures secure, compliant, and automated drawdowns, balancing efficiency with regulatory and user requirements.
