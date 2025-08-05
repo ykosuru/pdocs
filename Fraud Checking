@@ -1,0 +1,32 @@
+Business Requirements for Fraud Checking (Wire Fraud) in Wire Payments Processing
+Overview
+Fraud checking in wire payments processing detects and prevents fraudulent transactions, such as unauthorized transfers, account takeovers, or money laundering, in high-value credit transfers between debtors (payers) and creditors (payees). The system leverages ISO 20022 standards, adopted by the Federal Reserve’s Fedwire Funds Service (July 14, 2025) and The Clearing House’s CHIPS (April 2024), and SWIFT’s MX messaging (CBPR+ by November 2025), replacing legacy SWIFT MT and Fedwire FAIM formats to enhance data integrity, traceability, and fraud detection capabilities.
+Business Requirements
+1. Functional Requirements
+1.1 Fraud Detection Scope: Identify wire fraud indicators, including unauthorized transactions, suspicious debtor/creditor patterns, unusual amounts, or non-compliant data, using ISO 20022 MX message fields (e.g., pacs.008 for credit transfers, remt.001 for remittance).1.2 Real-Time Analysis: Perform fraud checks in real time before funds are transferred via Fedwire, CHIPS, or SWIFT, flagging or blocking suspicious transactions for review.1.3 Behavioral Profiling: Build debtor and creditor profiles based on historical transaction data (e.g., 90-day lookback) to detect anomalies (e.g., payments to new creditors, abnormal amounts, or unusual timing).1.4 Rule-Based Detection: Implement configurable fraud rules, including:  
+
+Transactions exceeding debtor-specific thresholds (e.g., $500,000).  
+Payments to high-risk jurisdictions or sanctioned entities (per OFAC lists).  
+Mismatched debtor/creditor details (e.g., Ultimate Debtor/Creditor fields in ISO 20022).  
+Rapid succession of payments to the same creditor (e.g., within 24 hours).1.5 Machine Learning Models: Use ML to detect complex fraud patterns, such as account takeover or synthetic identity fraud, by analyzing ISO 20022 fields, transaction frequency, and geolocation data.1.6 Sanctions Screening: Screen debtor, creditor, and intermediary details (e.g., IBAN, SWIFT BIC, Ultimate Debtor/Creditor) against OFAC, AML, and global sanctions lists in real time.1.7 Duplicate Detection: Prevent duplicate payments using ISO 20022 fields (e.g., invoice ID, amount, End-to-End ID) to avoid fraud disguised as errors.1.8 Dashboard and Alerts: Provide a dashboard for administrators to monitor flagged transactions, review fraud indicators, and approve/reject payments, with alerts sent to debtors via email, SMS, or in-app notifications.1.9 Dispute and Investigation Workflow: Enable debtors to report suspected fraud, pause transactions, and initiate investigations, with detailed logs for compliance audits.
+
+2. Non-Functional Requirements
+2.1 Compliance: Adhere to Fedwire and CHIPS ISO 20022 standards (effective July 14, 2025, and April 2024, respectively), SWIFT MX (CBPR+ by November 2025), NACHA, SEPA, AML, and OFAC regulations. Retain records for seven years per AML requirements.2.2 Security: Encrypt sensitive data (AES-256), tokenize account details (e.g., IBAN, DDA), and use HTTPS/OAuth for API integrations with Fedwire, CHIPS, or SWIFT.2.3 Performance: Complete fraud checks in under 500ms to support high-volume wire payments without delays.2.4 Scalability: Handle at least 10,000 transactions per hour, supporting large-scale B2B payments.2.5 Reliability: Achieve 99.99% uptime, with failover mechanisms to ensure continuous fraud monitoring.2.6 Auditability: Log all fraud checks, flags, and resolutions, with ISO 20022 transaction references, for regulatory audits.  
+3. ISO 20022 and Messaging Standards
+3.1 Message Formats: Use ISO 20022 MX messages for fraud detection:  
+
+pacs.008: Credit transfer execution, containing debtor/creditor details and transaction data.  
+pacs.002: Transaction status updates, used to confirm or reject flagged payments.  
+remt.001: Structured remittance data for invoice validation.  
+camt.056: Payment cancellation requests for suspected fraud.3.2 Key Fields for Fraud Checks: Leverage ISO 20022 fields for analysis:  
+Debtor/Creditor Details: Debtor Account, Creditor Account, Ultimate Debtor/Creditor (structured postal addresses required by November 2025 per Fedwire’s hybrid/end-state rules).  
+Transaction Data: Amount, Currency, Transaction Date, End-to-End ID, Invoice Reference.  
+Intermediary Data: Agent BIC, Correspondent Bank details for cross-border tracking.3.3 Interoperability: Ensure compatibility with Fedwire, CHIPS, and SWIFT MX formats, phasing out SWIFT MT (e.g., MT103, MT202) and FAIM formats post-July 14, 2025.
+
+4. Constraints
+4.1 Regulatory Compliance: Comply with Fedwire/CHIPS ISO 20022 mandates and SWIFT’s MX migration timeline. Use structured addresses post-November 2025. Perform mandatory AML/OFAC screening on all parties.4.2 Data Limitations: Avoid local file I/O or non-API network calls. Use secure databases for transaction and profile storage.4.3 Accuracy: Minimize false positives (<1%) to avoid disrupting legitimate payments, with tunable fraud thresholds.4.4 Authorization: Verify debtor accounts (e.g., micro-deposits, Plaid Auth) and creditor accounts (e.g., SWIFT BIC, routing number) to prevent fraudulent account usage.4.5 Error Handling: Automatically block high-risk transactions, pause others for manual review, and support retries for failed legitimate payments (e.g., after 1, 3, or 7 days).  
+5. Integration Requirements
+5.1 Payment Processors: Integrate with Fedwire, CHIPS, or SWIFT for wire transfers, and Plaid or Stripe for ACH verification.5.2 Sanctions Data: Connect to OFAC, UN, or EU sanctions lists via APIs for real-time screening.5.3 APIs: Use secure APIs for transaction processing (pacs.008), status updates (pacs.002), and cancellations (camt.056).5.4 Notification Systems: Integrate with SendGrid, Twilio, or Firebase for debtor/administrator alerts.  
+6. Success Criteria
+6.1 Fraud Prevention: Detect and prevent >95% of fraudulent transactions.6.2 Compliance: Pass regulatory audits with zero violations, meeting Fedwire, CHIPS, and SWIFT standards.6.3 Accuracy: Achieve <1% false positive rate in fraud detection.6.4 User Experience: Enable resolution of flagged transactions within 5 minutes via the dashboard.  
+This fraud checking system leverages ISO 20022’s structured data to ensure secure, compliant, and efficient wire payments, protecting businesses from wire fraud while aligning with Fedwire, CHIPS, and SWIFT standards.
