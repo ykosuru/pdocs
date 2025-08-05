@@ -1,4 +1,4 @@
-# Debit Authority Management in Wire Payments Processing - Business Requirements
+# Debit Authority Management in Wire Payments Processing - Business Requirements (Updated)
 
 ## 1. Executive Summary
 
@@ -109,7 +109,7 @@ This document outlines comprehensive business requirements for debit authority m
 ### 4.1 Processing Performance
 - Authorization creation and verification completion within 30 seconds
 - Real-time authorization validation within 500 milliseconds during payment processing
-- System must handle 5,000 or more authorization transactions per hour
+- System must handle 100,000 or more authorization transactions per hour
 - Concurrent processing support for multiple simultaneous authorization operations
 - Batch processing capabilities for high-volume corporate authorization management
 - Response time consistency regardless of authorization database size
@@ -130,88 +130,229 @@ This document outlines comprehensive business requirements for debit authority m
 - Fraud prevention integration with real-time risk assessment
 - Incident response procedures for security breaches or suspicious activity
 
-### 4.4 Scalability and Growth Management
-- Horizontal scaling architecture supporting business growth
-- Database optimization for large-scale authorization data management
-- Load balancing across multiple processing nodes
-- Performance testing under peak load conditions
-- Capacity planning for projected authorization volume growth
+## 5. ISO 20022 Message Types for Debit Authority Management (UPDATED)
 
-## 5. Compliance and Regulatory Requirements
+### 5.1 Mandate Management Messages (pain series)
 
-### 5.1 Payment Network Standards Compliance
+#### Core Mandate Lifecycle Messages:
+
+**pain.009 - Mandate Initiation Request**
+- **Purpose**: Setup instruction that allows debtor agent to accept debit instructions from creditor
+- **Usage**: Creation of new debit mandates and authorizations
+- **Participants**: Debtor, Creditor, Debtor Agent, Creditor Agent
+- **Business Flow**: Can be initiated by debtor or creditor, forwarded between agents
+- **Key Data Elements**:
+  - Mandate identification and reference
+  - Debtor and creditor party information
+  - Maximum amount and frequency limits
+  - Effective and expiration dates
+  - Collection schedule and parameters
+
+**pain.010 - Mandate Amendment Request**
+- **Purpose**: Request amendment of specific information in existing mandate
+- **Usage**: Modification of mandate terms, limits, or party information
+- **Requirements**: Must reflect new data elements and unique reference to existing mandate
+- **Validation**: Amendment only becomes valid after confirmation via pain.012
+- **Key Data Elements**:
+  - Original mandate reference
+  - Modified elements (amount, frequency, dates, parties)
+  - Amendment reason and justification
+  - New effective dates for changes
+
+**pain.011 - Mandate Cancellation Request**
+- **Purpose**: Request cancellation of existing mandate
+- **Usage**: Termination of recurring payment authorizations
+- **Initiation**: Typically initiated by debtor, but may come from creditor or debtor bank
+- **Effect**: Creditor can no longer collect funds from debtor account after acceptance
+- **Key Data Elements**:
+  - Mandate identification to be cancelled
+  - Cancellation reason and effective date
+  - Final payment processing instructions
+
+**pain.012 - Mandate Acceptance Report**
+- **Purpose**: Confirm acceptance or rejection of mandate request (initiation, amendment, cancellation)
+- **Usage**: Response to all mandate request messages
+- **Flow**: Sent from agent of receiver to agent of initiator
+- **Validation**: Mandate requests only become valid after acceptance confirmation
+- **Key Data Elements**:
+  - Reference to original request message
+  - Acceptance or rejection indicator
+  - Rejection reason codes (if applicable)
+  - Effective dates for accepted changes
+
+#### Additional Mandate Management Messages:
+
+**pain.017 - Mandate Copy Request**
+- **Purpose**: Request copy of existing mandate information
+- **Usage**: Retrieve mandate details for verification or dispute resolution
+
+**pain.018 - Mandate Suspension Request**
+- **Purpose**: Temporary suspension of mandate without cancellation
+- **Usage**: Pause authorization without full revocation
+
+### 5.2 Debit Authorization Messages (camt series)
+
+#### Real-Time Authorization Messages:
+
+**camt.037 - Debit Authorisation Request**
+- **Purpose**: Bank requests authorization to debit account for specific payment
+- **Usage**: Real-time validation before payment execution
+- **Participants**: Creditor Agent requesting authorization from Debtor Agent
+- **Business Context**: Used when additional authorization required beyond standing mandate
+- **Key Data Elements**:
+  - Payment amount and currency
+  - Requested execution date
+  - Creditor information and purpose
+  - Reference to underlying payment instruction
+
+**camt.036 - Debit Authorisation Response**
+- **Purpose**: Response to debit authorization request
+- **Usage**: Approve or reject specific debit authorization
+- **Participants**: Account owner (debtor) to account servicing institution
+- **Scope**: Covers one payment instruction at a time
+- **Key Data Elements**:
+  - Authorization approval/rejection indicator
+  - Acceptable amount and value date (if different)
+  - Rejection reason codes
+  - Conditional acceptance parameters
+
+### 5.3 Payment Processing Integration Messages
+
+#### Customer Payment Initiation:
+**pain.001 - Customer Credit Transfer Initiation**
+- **Enhanced Authorization Context**: Include mandate reference information
+- **Authorization Validation**: Link to active mandate for recurring payments
+- **Usage**: Trigger for mandate-based payment execution
+
+**pain.002 - Customer Payment Status Report**
+- **Authorization Status**: Include authorization-related status codes
+- **Usage**: Report status of mandate-triggered payments
+
+#### Wire Transfer Processing:
+**pacs.008 - Financial Institution to Financial Institution Customer Credit Transfer**
+- **Mandate Reference**: Include authorization reference in structured remittance data
+- **Usage**: Execute mandate-authorized wire transfers with proper authorization context
+
+### 5.4 Key Data Elements for Authorization Management
+
+#### Mandate Identification:
+- **Mandate ID**: Unique identifier for each authorization mandate
+- **Mandate Reference**: External reference number for business correlation
+- **Original Message Reference**: Link to initiating request message
+
+#### Party Information:
+- **Debtor Details**: Account holder information with verification data
+- **Creditor Details**: Authorized recipient information
+- **Ultimate Debtor/Creditor**: Additional party details for complex arrangements
+
+#### Authorization Parameters:
+- **Maximum Amount**: Single transaction and cumulative period limits
+- **Collection Amount Type**: Fixed or variable amount authorizations
+- **Frequency**: Collection frequency and timing parameters
+- **Effective Period**: Start and end dates for mandate validity
+
+#### Business Rules and Constraints:
+- **Amendment Indicator**: Specifies if amendments are allowed
+- **Pre-notification Requirements**: Customer notification obligations
+- **Reason Information**: Purpose codes and business justification
+
+### 5.5 Electronic Mandate (e-Mandate) Processing
+
+#### SEPA e-Mandate Framework:
+The pain.009-012 messages are commonly used in SEPA e-Mandate services:
+
+**Process Flow:**
+1. **Mandate Creation**: Creditor sends pain.009 to Creditor Bank
+2. **Bank-to-Bank**: Creditor Bank forwards pain.009 to Debtor Bank
+3. **Customer Interaction**: Debtor Bank presents mandate to debtor for acceptance
+4. **Response**: Debtor decision triggers pain.012 response through bank chain
+5. **Completion**: Mandate becomes active upon positive acceptance
+
+**Implementation Examples:**
+- **SEDA (Italy)**: SEPA compliant Electronic Database Alignment using pain.012.001.02
+- **EBA Clearing**: Optional Additional Service (AOS) for mandate information exchange
+- **Web API Integration**: Secure exchange over internet protocols
+
+### 5.6 Integration with Wire Payment Systems
+
+#### Authorization Validation Flow:
+1. **Pre-Payment Check**: Validate active mandate before processing
+2. **Limit Verification**: Check transaction against mandate limits
+3. **Real-Time Authorization**: Use camt.037/036 for additional approvals if needed
+4. **Payment Execution**: Process authorized payment with mandate reference
+5. **Status Reporting**: Update mandate usage and provide status via pain.002
+
+#### Cross-Border Authorization:
+- **International Mandates**: Support for multi-currency and cross-border authorizations
+- **Regulatory Compliance**: Ensure compliance with local mandate regulations
+- **Correspondent Banking**: Coordinate authorization across correspondent relationships
+
+### 5.7 Compliance and Regulatory Integration
+
+#### Regulatory Reporting Messages:
+- **Audit Trail Requirements**: Comprehensive logging of all mandate activities
+- **Data Retention**: Seven-year retention for mandate records per regulatory requirements
+- **Privacy Compliance**: GDPR/CCPA compliant consent and data management
+
+#### Risk Management Integration:
+- **AML Monitoring**: Enhanced due diligence for high-value mandates
+- **Fraud Detection**: Real-time risk assessment during mandate usage
+- **Sanctions Screening**: Ongoing monitoring of mandate parties against watch lists
+
+## 6. Compliance and Regulatory Requirements
+
+### 6.1 Payment Network Standards Compliance
 - Full compliance with Fedwire ISO 20022 standards effective July 14, 2025
 - CHIPS ISO 20022 compliance per April 2024 implementation requirements
 - SWIFT MX messaging standard compliance by November 2025 migration deadline
-- NACHA compliance for ACH-related authorization requirements
 - SEPA compliance for European authorization and payment processing
 
-### 5.2 Financial Services Regulatory Compliance
-- Bank Secrecy Act compliance for authorization monitoring and reporting
-- Anti-Money Laundering regulation adherence for customer due diligence
-- Consumer protection regulation compliance for authorization disclosure and rights
-- Electronic Fund Transfer Act compliance for authorization requirements
-- Fair Credit Reporting Act compliance for credit-related authorization decisions
-
-### 5.3 Data Protection and Privacy Compliance
+### 6.2 Data Protection and Privacy Compliance
 - GDPR compliance for European customer data protection
 - CCPA compliance for California consumer privacy protection
 - PCI DSS compliance for payment card industry security standards
 - SOX compliance for financial reporting and audit requirements
 - International data transfer compliance for cross-border authorization processing
 
-### 5.4 Industry Standards and Best Practices
+### 6.3 Industry Standards and Best Practices
 - ISO 27001 compliance for information security management
 - SOC 2 Type II compliance for service organization controls
 - NIST Cybersecurity Framework implementation for risk management
-- Industry best practices for authorization lifecycle management
-- International standards for digital identity and authentication
 
-### 5.5 Audit and Examination Readiness
-- Comprehensive audit trail maintenance for all authorization activities
-- Regulatory examination preparation with documentation and evidence collection
-- Internal audit capabilities for ongoing compliance verification
-- Third-party audit support with comprehensive system documentation
-- Compliance testing and validation of authorization system functionality
+## 7. Integration and Technology Requirements
 
-## 6. Integration and Technology Requirements
-
-### 6.1 Payment Network Integration
+### 7.1 Payment Network Integration
 - SWIFT network connectivity for international authorization processing
 - Fedwire integration for domestic high-value authorization management
 - CHIPS network integration for real-time gross settlement authorization
-- ACH network integration for related authorization processing
 - Real-time payment system integration for immediate authorization validation
 
-### 6.2 Core Banking System Integration (Hogan)
+### 7.2 Core Banking System Integration (Hogan)
 - Real-time account information access for authorization validation
 - Customer information integration for comprehensive authorization management
 - Balance and limit checking integration for overdraft protection
 - Transaction history integration for authorization pattern analysis
 - Credit and risk system integration for authorization approval decisions
 
-### 6.3 Third-Party Service Integration
+### 7.3 Third-Party Service Integration
 - Identity verification service integration for customer authentication
 - Fraud prevention service integration for authorization security
 - Electronic signature platform integration for digital mandate creation
 - Document management system integration for authorization storage
 
-### 6.4 Enterprise System Integration
+### 7.4 Enterprise System Integration
 - Accounting system integration for authorization-related financial reporting
 - Customer relationship management system integration for service coordination
 - Business intelligence platform integration for analytics and reporting
 
-## 7. Success Criteria and Measurements
+## 8. Success Criteria and Measurements
 
-### 7.1 Operational Excellence
+### 8.1 Operational Excellence
 - Authorization processing accuracy of 100% with zero unauthorized debits
-- Customer satisfaction scores exceeding 4.5/5 for authorization services
-- Self-service utilization rate above 80% for routine authorization management
 - Exception resolution time averaging under 2 hours for standard issues
 - System availability exceeding 99.99% during business operating hours
-- Processing efficiency improvement of 25% annually through automation
 
-### 7.2 Compliance and Risk Management
+### 8.2 Compliance and Risk Management
 - Zero regulatory violations related to authorization management
 - 100% audit trail completeness for regulatory examinations
 - Fraud prevention effectiveness with 99% accuracy in risk detection
@@ -219,13 +360,4 @@ This document outlines comprehensive business requirements for debit authority m
 - Data security maintenance with zero data breaches or privacy violations
 - Compliance cost reduction through automated monitoring and reporting
 
-### 7.3 Customer Experience and Adoption
-- Customer adoption rate of 90% for self-service authorization management
-- Authorization creation time reduction to under 5 minutes for standard mandates
-- Customer complaint reduction of 50% related to authorization issues
-- Multi-channel service consistency across all customer interaction points
-- Customer education effectiveness with 90% understanding of authorization rights
-- Customer retention improvement through enhanced authorization services
-
-
-This comprehensive debit authority management system ensures secure, compliant, and efficient processing of authorized wire payments while protecting customer interests and maintaining operational excellence across all authorization lifecycle activities.
+This comprehensive debit authority management system ensures secure, compliant, and efficient processing of authorized wire payments while protecting customer interests and maintaining operational excellence across all authorization lifecycle activities, fully leveraging the capabilities of ISO 20022 mandate management standards.
